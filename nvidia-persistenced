@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+# nvidia-persistenced        Startup script for NVIDIA persistenced
+#
+# chkconfig: - 86 14
+# description: NVIDIA persistenced enables the persistent software state in the NVIDIA driver
+# processname: nvidia-persistenced
+# pidfile: /var/run/nvidia-persistenced/nvidia-persistenced.pid
+#
+### BEGIN INIT INFO
+# Provides: nvidia-persistenced
+# Required-Start: $local_fs
+# Required-Stop: $local_fs
+# Short-Description: start and stop NVIDIA persistenced 
+# Description: NVIDIA persistenced enables the persistent software state in the NVIDIA driver
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+if [ -f /etc/sysconfig/httpd ]; then
+        . /etc/sysconfig/httpd
+fi
+
+# Path nvidia-persistenced
+persistenced=/usr/bin/nvidia-persistenced
+prog=nvidia-persistenced
+nvuser=nvidia
+pidfile=${PIDFILE-/var/run/nvidia-persistenced/nvidia-persistenced.pid}
+RETVAL=0
+STOP_TIMEOUT=${STOP_TIMEOUT-10}
+OPTIONS="-u $nvduser"
+
+start() {
+	# set persistent mode and accounting mode
+	/usr/bin/nvidia-smi -pm ENABLED
+	/usr/bin/nvidia-smi -am ENABLED
+	echo -n $"Starting $prog: "
+	daemon --pidfile=${pidfile} $persistenced $OPTIONS
+	RETVAL=$?
+	return $RETVAL
+}
+
+stop() {
+	status -p ${pidfile} $persistenced > /dev/null
+	if [[ $? = 0 ]]; then
+		echo -n $"Stopping $prog: "
+		killproc -p ${pidfile} -d ${STOP_TIMEOUT} $httpd
+	else
+		echo -n $"Stopping $prog: "
+		success
+	fi
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f ${pidfile}
+}
+
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	status -p ${pidfile} $persistenced
+	RETVAL=$?
+	;;
+  restart)
+	stop
+	start
+	;;
+  condrestart|try-restart)
+	if status -p ${pidfile} $persistenced >&/dev/null; then
+		stop
+		start
+	fi
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|condrestart|try-restart|reload|status}"
+	RETVAL=2
+esac
+
+exit $RETVAL
