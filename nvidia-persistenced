@@ -29,7 +29,7 @@ nvuser=nvidia
 pidfile=${PIDFILE-/var/run/nvidia-persistenced/nvidia-persistenced.pid}
 RETVAL=0
 STOP_TIMEOUT=${STOP_TIMEOUT-10}
-OPTIONS="-u $nvduser"
+OPTIONS="-u $nvuser"
 
 start() {
 	# set persistent mode and accounting mode
